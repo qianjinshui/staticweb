@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Japanese Words</title>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        li {
+            margin-bottom: 10px;
+        }
+
+        .trumpet {
+            cursor: pointer;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <ul>
+        <li>とっておき<span class="trumpet">🔊</span></li>
+        <li>本場<span class="trumpet">🔊</span></li>
+        <li>玄関<span class="trumpet">🔊</span></li>
+        <li>ロッカー<span class="trumpet">🔊</span></li>
+        <li>バッグ<span class="trumpet">🔊</span></li>
+        <li>旅行社<span class="trumpet">🔊</span></li>
+        <li>視察団<span class="trumpet">🔊</span></li>
+        <li>到着<span class="trumpet">🔊</span></li>
+    </ul>
+
+    <input type="text" id="translateInput" placeholder="Enter text to translate">
+    <button id="translateButton">Translate</button>
+    <p id="translationResult"></p>
+
+    <script>
+        let accessToken;
+
+        $(document).ready(function() {
+            $.ajax({
+                url: 'https://southeastasia.api.cognitive.microsoft.com/sts/v1.0/issueToken',
+                method: 'POST',
+                headers: {
+                    'Ocp-Apim-Subscription-Key': '6e331fd633ba4a329a1cdd4fccf95c88'
+                },
+                success: function(data) {
+                    accessToken = data;
+                }
+            });
+
+            $('#translateButton').click(function() {
+                const textToTranslate = $('#translateInput').val();
+                $.ajax({
+                    url: `https://api.cognitive.microsofttranslator.com/translate?api-version=3.0&to=zh`,
+                    method: 'POST',
+                    headers: {
+                        'Ocp-Apim-Subscription-Key': '6790daf6dcab44229ddd680e2039baf3',
+                        'Ocp-Apim-Subscription-Region': 'japanwest',
+                        'Content-Type': 'application/json'
+                    },
+                    data: JSON.stringify([{ 'Text': textToTranslate }]),
+                    success: function(data) {
+                        $('#translationResult').text(data[0].translations[0].text);
+                    }
+                });
+            });
+        });
+
+        $('.trumpet').click(function () {
+            const word = $(this).parent().text().replace('🔊', '');
+            const url = `https://southeastasia.tts.speech.microsoft.com/cognitiveservices/v1`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken,
+                    'Content-Type': 'application/ssml+xml',
+                    'X-Microsoft-OutputFormat': 'riff-24khz-16bit-mono-pcm',
+                },
+                body: `<speak version='1.0' xml:lang='ja-JP'><voice xml:lang='ja-JP' xml:gender='Female' name='ja-JP-AoiNeural'>${word}</voice></speak>`
+            }).then(response => response.blob())
+                .then(data => {
+                    const url = window.URL || window.webkitURL;
+                    const audio = new Audio(url.createObjectURL(data));
+                    audio.play();
+                });
+        });
+    </script>
+</body>
+
+</html>
